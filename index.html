@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>AutoSlot — Workshop Booking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ink: "#0b1220",
+            panel: "#121a2b",
+            line: "#243049",
+            accent: "#f59e0b"
+          },
+          fontFamily: {
+            sans: ["Inter", "system-ui", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    html, body {
+      min-height: 100%;
+    }
+    .slot-scroll::-webkit-scrollbar { display: none; }
+    .fade-in { animation: fadeIn 0.2s ease forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-[#0b1220] antialiased transition-colors duration-300">
+  
+  <div class="mx-auto min-h-screen max-w-md bg-white dark:bg-ink shadow-2xl relative transition-colors duration-300 overflow-hidden">
+    
+    <!-- Screen 1: Home -->
+    <section id="screen-home" class="flex min-h-screen flex-col px-5 pb-8 pt-8">
+      <header class="mb-6 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-sm font-extrabold text-white dark:text-ink shadow-sm">AS</span>
+          <div>
+            <h1 class="text-xl font-extrabold tracking-tight">AutoSlot</h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Car workshop bookings</p>
+          </div>
+        </div>
+        <!-- Theme Toggle inside the mobile view -->
+        <button id="theme-toggle" class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-amber-500 border border-slate-200 dark:border-line dark:bg-panel transition hover:bg-slate-100 dark:hover:bg-line">
+          <span id="theme-icon-light" class="hidden text-xl">☀️</span>
+          <span id="theme-icon-dark" class="text-xl">🌙</span>
+        </button>
+      </header>
+
+      <p class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Pick a date</p>
+      <div id="date-row" class="slot-scroll mb-6 flex gap-2 overflow-x-auto pb-1"></div>
+
+      <div class="mb-3 flex items-end justify-between">
+        <div>
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Available slots</p>
+          <p id="selected-date-label" class="text-xs text-slate-500 dark:text-slate-400"></p>
+        </div>
+        <p class="text-[11px] text-slate-500">10:30 AM – 6:00 PM</p>
+      </div>
+
+      <div id="closed-banner" class="mb-4 hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-line dark:bg-panel px-4 py-8 text-center transition-colors duration-300">
+        <p class="text-base font-bold text-slate-800 dark:text-slate-200">Closed on Fridays</p>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">The workshop is not taking bookings this day. Please choose another date.</p>
+      </div>
+
+      <div id="slot-list" class="grid grid-cols-2 gap-2"></div>
+
+      <div class="mt-auto pt-10">
+        <button id="staff-entry-btn" type="button" class="w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-line dark:bg-panel py-3 text-sm font-medium text-slate-600 dark:text-slate-400 transition hover:border-amber-500/40 hover:text-amber-500 dark:hover:text-amber-400">
+          Staff Calendar
+        </button>
+      </div>
+    </section>
+
+    <!-- Screen 2: Booking Form + Success -->
+    <section id="screen-booking" class="hidden min-h-screen flex-col px-5 pb-8 pt-8">
+      <div id="booking-form-wrap">
+        <button id="back-home-from-form" type="button" class="mb-4 text-sm font-medium text-amber-500 dark:text-amber-400">← Back</button>
+        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Confirm booking</h2>
+        <div class="mt-3 rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/10 px-4 py-3">
+          <p class="text-xs uppercase tracking-wide text-amber-600 dark:text-amber-400">Selected slot</p>
+          <p id="booking-slot-summary" class="mt-1 text-base font-bold text-slate-800 dark:text-slate-200"></p>
+        </div>
+
+        <form id="booking-form" class="mt-6 space-y-4">
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Name</span>
+            <input name="name" type="text" required placeholder="Full name" class="w-full rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-panel px-3 py-3 text-sm outline-none ring-amber-500/40 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 transition-colors duration-300" />
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Phone Number</span>
+            <input name="phone" type="tel" required placeholder="e.g. 07123 456789" class="w-full rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-panel px-3 py-3 text-sm outline-none ring-amber-500/40 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 transition-colors duration-300" />
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Plate Number</span>
+            <input name="plate" type="text" required placeholder="e.g. AB12 CDE" class="w-full rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-panel px-3 py-3 text-sm uppercase outline-none ring-amber-500/40 placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:normal-case focus:ring-2 transition-colors duration-300" />
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Car Model</span>
+            <input name="model" type="text" required placeholder="e.g. Ford Focus" class="w-full rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-panel px-3 py-3 text-sm outline-none ring-amber-500/40 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 transition-colors duration-300" />
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Service Type</span>
+            <select name="service" required class="w-full rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-panel px-3 py-3 text-sm outline-none ring-amber-500/40 focus:ring-2 transition-colors duration-300">
+              <option value="" disabled selected>Select a service</option>
+              <option>General Service</option>
+              <option>Exhaust Repair</option>
+              <option>Inspection</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400">Notes <span class="font-normal text-slate-400 dark:text-slate-500">(optional)</span></span>
+            <textarea name="notes" rows="3" placeholder="Anything the mechanic should know" class="w-full resize-none rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-panel px-3 py-3 text-sm outline-none ring-amber-500/40 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 transition-colors duration-300"></textarea>
+          </label>
+          <label class="flex items-start gap-3 rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-panel px-3 py-3 transition-colors duration-300">
+            <input id="privacy-consent" name="consent" type="checkbox" required class="mt-1 h-4 w-4 accent-amber-500" />
+            <span class="text-xs leading-5 text-slate-600 dark:text-slate-300">I agree to AutoSlot storing my booking details for this workshop visit. Privacy consent is required to continue.</span>
+          </label>
+          <button type="submit" class="w-full rounded-xl bg-amber-500 py-3.5 text-sm font-bold text-white dark:text-ink transition hover:bg-amber-400 shadow-sm">
+            Confirm booking
+          </button>
+        </form>
+      </div>
+
+      <div id="success-wrap" class="hidden min-h-[70vh] flex-col items-center justify-center text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-3xl font-bold text-white dark:text-ink shadow-sm">✓</div>
+        <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white">Booking confirmed</h2>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Your dummy booking number is</p>
+        <p id="booking-number" class="mt-3 rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-5 py-2 text-lg font-extrabold tracking-wide text-amber-600 dark:text-amber-400">#AS-1029</p>
+        <p class="mt-4 max-w-xs text-sm text-slate-600 dark:text-slate-300">Please arrive 10 minutes early. This is an MVP confirmation — no email is sent.</p>
+        <button id="success-home-btn" type="button" class="mt-8 w-full rounded-xl bg-amber-500 py-3.5 text-sm font-bold text-white dark:text-ink shadow-sm">Back to Home</button>
+      </div>
+    </section>
+
+    <!-- Screen 3: Staff Calendar -->
+    <section id="screen-staff" class="hidden min-h-screen flex-col px-5 pb-8 pt-8 relative">
+      <div class="mb-6 flex items-start justify-between mt-8">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-amber-500 dark:text-amber-400">Staff</p>
+          <h2 class="text-xl font-extrabold text-slate-900 dark:text-white">Calendar</h2>
+        </div>
+        <button id="staff-logout-btn" type="button" class="rounded-xl border border-slate-200 dark:border-line px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-panel transition">Log Out</button>
+      </div>
+
+      <!-- Staff Date Picker -->
+      <div id="staff-date-row" class="slot-scroll mb-4 flex gap-2 overflow-x-auto pb-1"></div>
+      
+      <p id="staff-selected-date-label" class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300"></p>
+
+      <div id="staff-bookings" class="space-y-3 pb-10"></div>
+    </section>
+
+    <!-- Custom Staff Passcode Modal -->
+    <div id="passcode-modal" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/60 dark:bg-black/60 px-4 backdrop-blur-sm">
+      <div class="w-full max-w-[280px] rounded-2xl bg-white dark:bg-panel p-5 shadow-2xl fade-in border border-slate-200 dark:border-line">
+        <h3 class="mb-1 text-lg font-bold text-slate-900 dark:text-white">Staff Login</h3>
+        <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">Enter passcode (1234)</p>
+        <input type="password" id="passcode-input" class="w-full rounded-xl border border-slate-200 dark:border-line bg-slate-50 dark:bg-ink px-3 py-3 text-center text-lg tracking-[0.5em] outline-none focus:border-amber-500 dark:focus:border-amber-500 mb-4 transition-colors" />
+        <p id="passcode-error" class="hidden mb-3 text-center text-xs font-semibold text-red-500">Incorrect passcode.</p>
+        <div class="flex gap-2">
+          <button id="passcode-cancel" class="flex-1 rounded-xl bg-slate-100 dark:bg-line py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-200 transition hover:bg-slate-200 dark:hover:bg-slate-700">Cancel</button>
+          <button id="passcode-submit" class="flex-1 rounded-xl bg-amber-500 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-400">Enter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staff Booking Details Modal -->
+    <div id="staff-modal" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/60 dark:bg-black/60 px-4 backdrop-blur-sm">
+      <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-panel p-5 shadow-2xl fade-in border border-slate-200 dark:border-line">
+        <div class="mb-4 flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Booking Details</h3>
+          <span id="modal-time" class="rounded-full bg-amber-100 dark:bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400"></span>
+        </div>
+        <div class="space-y-3 text-sm">
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Customer</p>
+            <p id="modal-name" class="font-medium text-slate-900 dark:text-slate-200"></p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Phone</p>
+            <p id="modal-phone" class="font-medium text-slate-900 dark:text-slate-200"></p>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Plate Number</p>
+              <p id="modal-plate" class="font-medium uppercase text-slate-900 dark:text-slate-200"></p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Car Model</p>
+              <p id="modal-model" class="font-medium text-slate-900 dark:text-slate-200"></p>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Service Type</p>
+            <p id="modal-service" class="font-medium text-slate-900 dark:text-slate-200"></p>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Notes</p>
+            <p id="modal-notes" class="rounded-lg bg-slate-50 dark:bg-ink p-2 text-slate-700 dark:text-slate-300"></p>
+          </div>
+        </div>
+        <button id="close-modal-btn" class="mt-6 w-full rounded-xl bg-slate-100 dark:bg-line py-3 text-sm font-semibold text-slate-800 dark:text-slate-200 transition hover:bg-slate-200 dark:hover:bg-slate-700">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme Toggle Logic
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const htmlEl = document.documentElement;
+    const iconLight = document.getElementById('theme-icon-light');
+    const iconDark = document.getElementById('theme-icon-dark');
+
+    themeToggleBtn.addEventListener('click', () => {
+      htmlEl.classList.toggle('dark');
+      if (htmlEl.classList.contains('dark')) {
+        iconLight.classList.add('hidden');
+        iconDark.classList.remove('hidden');
+      } else {
+        iconLight.classList.remove('hidden');
+        iconDark.classList.add('hidden');
+      }
+    });
+
+    const SLOT_TIMES = [
+      { time: "10:30 AM", end: "11:30 AM" },
+      { time: "11:30 AM", end: "12:30 PM" },
+      { time: "12:30 PM", end: "1:30 PM" },
+      { time: "1:30 PM", end: "2:30 PM" },
+      { time: "2:30 PM", end: "3:30 PM" },
+      { time: "3:30 PM", end: "4:30 PM" },
+      { time: "4:30 PM", end: "5:30 PM" },
+      { time: "5:30 PM", end: "6:30 PM" }
+    ];
+
+    const STAFF_PASSCODE = "1234";
+
+    const STAFF_BOOKINGS_MOCK = {
+      0: [
+        { time: "10:30 AM", name: "Maya Chen", phone: "07123 111222", plate: "BK19 TPL", model: "Toyota Yaris", service: "General Service", notes: "Check brake pads please.", status: "Booked" },
+        { time: "12:30 PM", name: "Omar Hassan", phone: "07988 333444", plate: "LD22 XRK", model: "Honda Civic", service: "Exhaust Repair", notes: "Loud noise from rear.", status: "Booked" },
+        { time: "2:30 PM", name: "Priya Nair", phone: "07777 555666", plate: "WV70 HNM", model: "Ford Focus", service: "Inspection", notes: "None", status: "Booked" },
+        { time: "4:30 PM", name: "James Cole", phone: "07555 777888", plate: "NG18 QWE", model: "VW Golf", service: "General Service", notes: "Need oil change.", status: "Booked" }
+      ],
+      1: [
+        { time: "11:30 AM", name: "Sarah Lee", phone: "07222 999000", plate: "AB12 CDE", model: "Audi A3", service: "Inspection", notes: "MOT prep.", status: "Booked" }
+      ]
+    };
+
+    const TAKEN_BY_DATE = {
+      0: ["10:30 AM", "12:30 PM", "2:30 PM", "4:30 PM"],
+      1: ["11:30 AM", "1:30 PM", "5:30 PM"],
+      2: ["10:30 AM", "11:30 AM", "3:30 PM"],
+      3: ["12:30 PM", "4:30 PM"],
+      4: [],
+      5: ["1:30 PM", "2:30 PM", "3:30 PM"],
+      6: ["10:30 AM", "5:30 PM"],
+      7: ["11:30 AM", "12:30 PM"]
+    };
+
+    const screens = {
+      home: document.getElementById("screen-home"),
+      booking: document.getElementById("screen-booking"),
+      staff: document.getElementById("screen-staff")
+    };
+
+    // Home elements
+    const dateRow = document.getElementById("date-row");
+    const slotList = document.getElementById("slot-list");
+    const closedBanner = document.getElementById("closed-banner");
+    const selectedDateLabel = document.getElementById("selected-date-label");
+    
+    // Booking elements
+    const bookingFormWrap = document.getElementById("booking-form-wrap");
+    const successWrap = document.getElementById("success-wrap");
+    const bookingForm = document.getElementById("booking-form");
+    const bookingSlotSummary = document.getElementById("booking-slot-summary");
+    const bookingNumberEl = document.getElementById("booking-number");
+    
+    // Staff elements
+    const staffDateRow = document.getElementById("staff-date-row");
+    const staffBookingsEl = document.getElementById("staff-bookings");
+    const staffSelectedDateLabel = document.getElementById("staff-selected-date-label");
+    const staffModal = document.getElementById("staff-modal");
+    
+    // Passcode elements
+    const passcodeModal = document.getElementById("passcode-modal");
+    const passcodeInput = document.getElementById("passcode-input");
+    const passcodeSubmit = document.getElementById("passcode-submit");
+    const passcodeCancel = document.getElementById("passcode-cancel");
+    const passcodeError = document.getElementById("passcode-error");
+
+    const dates = buildDates();
+    let selectedDateIndex = firstOpenIndex();
+    let staffSelectedDateIndex = 0; 
+    let selectedSlot = null;
+
+    function buildDates() {
+      const list = [];
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      for (let i = 0; i < 8; i += 1) {
+        const d = new Date(now);
+        d.setDate(now.getDate() + i);
+        list.push({ date: d, key: formatKey(d), closed: d.getDay() === 5, offset: i });
+      }
+      return list;
+    }
+
+    function firstOpenIndex() { return dates.findIndex((d) => !d.closed); }
+    function formatKey(d) { return d.toISOString().slice(0, 10); }
+    function weekdayShort(d) { return d.toLocaleDateString("en-GB", { weekday: "short" }); }
+    function longDate(d) {
+      return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    }
+
+    function showScreen(name) {
+      Object.values(screens).forEach((el) => {
+        el.classList.add("hidden");
+        el.classList.remove("flex");
+      });
+      screens[name].classList.remove("hidden");
+      screens[name].classList.add("flex", "fade-in");
+      window.scrollTo(0, 0);
+    }
+
+    // --- HOME SCREEN LOGIC ---
+    function renderDates() {
+      dateRow.innerHTML = "";
+      dates.forEach((item, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isSelected = index === selectedDateIndex;
+        
+        btn.className = [
+          "min-w-[4.5rem] shrink-0 rounded-2xl border px-3 py-3 text-center transition",
+          item.closed
+            ? isSelected
+              ? "cursor-not-allowed border-slate-300 bg-slate-200 text-slate-500 dark:border-slate-500 dark:bg-zinc-900 dark:text-slate-400 ring-2 ring-slate-400 dark:ring-slate-500"
+              : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 dark:border-line dark:bg-zinc-900/70 dark:text-slate-500"
+            : isSelected
+              ? "border-amber-500 bg-amber-500 text-white dark:text-ink shadow-sm"
+              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-line dark:bg-panel dark:text-slate-200 dark:hover:bg-line"
+        ].join(" ");
+        
+        btn.innerHTML = `
+          <div class="text-[10px] font-semibold uppercase">${weekdayShort(item.date)}</div>
+          <div class="text-lg font-extrabold leading-tight">${item.date.getDate()}</div>
+          <div class="text-[10px] ${item.closed ? "font-semibold" : ""}">${item.closed ? "Closed" : item.date.toLocaleDateString("en-GB", { month: "short" })}</div>
+        `;
+        
+        btn.addEventListener("click", () => {
+          selectedDateIndex = index;
+          renderDates();
+          renderSlots();
+        });
+        dateRow.appendChild(btn);
+      });
+    }
+
+    function renderSlots() {
+      const item = dates[selectedDateIndex];
+      selectedDateLabel.textContent = longDate(item.date);
+      slotList.innerHTML = "";
+
+      if (item.closed) {
+        closedBanner.classList.remove("hidden");
+        slotList.classList.add("hidden");
+        return;
+      }
+
+      closedBanner.classList.add("hidden");
+      slotList.classList.remove("hidden");
+      const taken = TAKEN_BY_DATE[item.offset] || [];
+
+      SLOT_TIMES.forEach((slot) => {
+        const isTaken = taken.includes(slot.time);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.disabled = isTaken;
+        
+        btn.className = [
+          "rounded-2xl border px-3 py-3 text-left transition",
+          isTaken
+            ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-line dark:bg-zinc-900/80 dark:text-slate-500"
+            : "border-emerald-200 bg-emerald-50 hover:border-emerald-300 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:hover:border-emerald-400 shadow-sm"
+        ].join(" ");
+        
+        btn.innerHTML = `
+          <div class="text-sm font-bold ${isTaken ? "" : "text-slate-900 dark:text-white"}">${slot.time}</div>
+          <div class="mt-1 text-[11px] font-medium ${isTaken ? "text-slate-400 dark:text-slate-500" : "text-emerald-600 dark:text-emerald-400"}">${isTaken ? "Taken" : "Available"}</div>
+        `;
+        
+        if (!isTaken) {
+          btn.addEventListener("click", () => openBooking(item, slot));
+        }
+        slotList.appendChild(btn);
+      });
+    }
+
+    function openBooking(dateItem, slot) {
+      selectedSlot = { dateItem, slot };
+      bookingSlotSummary.textContent = `${longDate(dateItem.date)} · ${slot.time} – ${slot.end}`;
+      bookingForm.reset();
+      bookingFormWrap.classList.remove("hidden");
+      successWrap.classList.add("hidden");
+      showScreen("booking");
+    }
+
+    // --- STAFF SCREEN LOGIC ---
+    function renderStaffDates() {
+      staffDateRow.innerHTML = "";
+      dates.forEach((item, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isSelected = index === staffSelectedDateIndex;
+        
+        btn.className = [
+          "min-w-[4.5rem] shrink-0 rounded-2xl border px-3 py-3 text-center transition",
+          isSelected
+            ? "border-amber-500 bg-amber-500 text-white dark:text-ink shadow-sm"
+            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-line dark:bg-panel dark:text-slate-200 dark:hover:bg-line"
+        ].join(" ");
+        
+        btn.innerHTML = `
+          <div class="text-[10px] font-semibold uppercase">${weekdayShort(item.date)}</div>
+          <div class="text-lg font-extrabold leading-tight">${item.date.getDate()}</div>
+          <div class="text-[10px]">${item.date.toLocaleDateString("en-GB", { month: "short" })}</div>
+        `;
+        
+        btn.addEventListener("click", () => {
+          staffSelectedDateIndex = index;
+          renderStaffDates();
+          renderStaffBookings();
+        });
+        staffDateRow.appendChild(btn);
+      });
+    }
+
+    function renderStaffBookings() {
+      const selectedStaffDate = dates[staffSelectedDateIndex];
+      staffSelectedDateLabel.textContent = longDate(selectedStaffDate.date);
+      
+      const bookingsForDay = STAFF_BOOKINGS_MOCK[selectedStaffDate.offset] || [];
+      
+      if (selectedStaffDate.closed || bookingsForDay.length === 0) {
+        staffBookingsEl.innerHTML = `<p class="text-sm text-slate-500 dark:text-slate-400 mt-4 text-center">No bookings on this date.</p>`;
+        return;
+      }
+
+      staffBookingsEl.innerHTML = "";
+      bookingsForDay.forEach(b => {
+        const article = document.createElement("article");
+        article.className = "rounded-2xl border border-slate-200 dark:border-line bg-white dark:bg-panel px-4 py-3 cursor-pointer hover:border-amber-400 dark:hover:border-amber-500/50 transition shadow-sm";
+        article.innerHTML = `
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-bold text-slate-900 dark:text-white">${b.time}</p>
+            <span class="rounded-full bg-amber-100 dark:bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">${b.status}</span>
+          </div>
+          <p class="mt-2 text-sm font-medium text-slate-800 dark:text-slate-200">${b.name}</p>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Plate ${b.plate} · ${b.service}</p>
+        `;
+        article.addEventListener("click", () => openStaffModal(b));
+        staffBookingsEl.appendChild(article);
+      });
+    }
+
+    function openStaffModal(bookingData) {
+      document.getElementById("modal-time").textContent = bookingData.time;
+      document.getElementById("modal-name").textContent = bookingData.name;
+      document.getElementById("modal-phone").textContent = bookingData.phone;
+      document.getElementById("modal-plate").textContent = bookingData.plate;
+      document.getElementById("modal-model").textContent = bookingData.model;
+      document.getElementById("modal-service").textContent = bookingData.service;
+      document.getElementById("modal-notes").textContent = bookingData.notes || "None provided";
+      
+      staffModal.classList.remove("hidden");
+    }
+
+    document.getElementById("close-modal-btn").addEventListener("click", () => {
+      staffModal.classList.add("hidden");
+    });
+
+    // --- EVENT LISTENERS ---
+    bookingForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!document.getElementById("privacy-consent").checked) return;
+      const n = 1000 + Math.floor(Math.random() * 9000);
+      bookingNumberEl.textContent = `#AS-${n}`;
+      bookingFormWrap.classList.add("hidden");
+      successWrap.classList.remove("hidden");
+      successWrap.classList.add("flex", "fade-in");
+      window.scrollTo(0, 0);
+    });
+
+    document.getElementById("back-home-from-form").addEventListener("click", () => showScreen("home"));
+    
+    document.getElementById("success-home-btn").addEventListener("click", () => {
+      showScreen("home");
+      bookingFormWrap.classList.remove("hidden");
+      successWrap.classList.add("hidden");
+    });
+
+    // Custom Passcode Modal Logic
+    document.getElementById("staff-entry-btn").addEventListener("click", () => {
+      passcodeInput.value = "";
+      passcodeError.classList.add("hidden");
+      passcodeModal.classList.remove("hidden");
+      setTimeout(() => passcodeInput.focus(), 100);
+    });
+
+    passcodeCancel.addEventListener("click", () => {
+      passcodeModal.classList.add("hidden");
+    });
+
+    function handleStaffLogin() {
+      if (passcodeInput.value === STAFF_PASSCODE) {
+        passcodeModal.classList.add("hidden");
+        staffSelectedDateIndex = 0; 
+        renderStaffDates();
+        renderStaffBookings();
+        showScreen("staff");
+      } else {
+        passcodeError.classList.remove("hidden");
+        passcodeInput.value = "";
+        passcodeInput.focus();
+      }
+    }
+
+    passcodeSubmit.addEventListener("click", handleStaffLogin);
+    
+    passcodeInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleStaffLogin();
+      }
+    });
+
+    document.getElementById("staff-logout-btn").addEventListener("click", () => showScreen("home"));
+
+    // Initialize
+    renderDates();
+    renderSlots();
+  </script>
+</body>
+</html>
